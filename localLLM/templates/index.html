@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hebrew Text Summarizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">Hebrew Text Summarizer</h1>
+        <form id="summarizeForm" class="space-y-4">
+            <div>
+                <label for="text" class="block text-sm font-medium text-gray-700 mb-1">Enter Hebrew Text:</label>
+                <textarea id="text" name="text" rows="6" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500" required></textarea>
+            </div>
+            <div class="flex justify-between items-center">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300">
+                    Summarize
+                </button>
+                <div id="loadingIndicator" class="hidden">
+                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
+        </form>
+        <div id="summary" class="mt-8 hidden">
+            <h2 class="text-xl font-semibold mb-3 text-gray-800">Summary:</h2>
+            <ul id="summaryList" class="list-disc list-inside space-y-2 text-gray-700"></ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('summarizeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = document.getElementById('text').value;
+            const summaryDiv = document.getElementById('summary');
+            const summaryList = document.getElementById('summaryList');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            summaryDiv.classList.add('hidden');
+            summaryList.innerHTML = '';
+            loadingIndicator.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`/summarize?text=${encodeURIComponent(text)}`);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            const data = JSON.parse(line.slice(5));
+                            if (data.content) {
+                                summaryDiv.classList.remove('hidden');
+                                const li = document.createElement('li');
+                                li.textContent = data.content;
+                                summaryList.appendChild(li);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while summarizing the text.');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
