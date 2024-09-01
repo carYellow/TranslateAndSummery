@@ -24,7 +24,7 @@ This FastAPI application provides an AI-powered text summarization and translati
 
 ## Usage
 
-1. Start the server: `python Part_4.py`
+1. Start the server with the desired part: for example `python Part_4.py`,
 2. Access the web interface at `http://localhost:8000`
 3. Use the `/summarize` endpoint for API access
 
